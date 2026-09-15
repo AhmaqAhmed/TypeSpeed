@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeSpeed — Test</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/start_guest.css') }}">
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+<style>
+  /* theme toggle button */
+  .theme-btn {
+    background: none;
+    border: 1px solid var(--border, #dde0e8);
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    font-family: inherit;
+    font-size: .8rem;
+    color: var(--fg-dim, #888);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .theme-btn:hover { background: var(--btn-sec, #e8e8ee); color: var(--fg, #1a1a1a); }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">TypeSpeed</a>
+    <a href="{{ url_for('login') }}">Login</a>
+  </header>
+  <main class="test-wrap">
+
+    {% if results %}
+    <div class="results">
+      <h3>Results</h3>
+      <div class="result-item"><span class="label">Final WPM</span><span class="value">{{ results.final_wpm }}</span></div>
+      <div class="result-item"><span class="label">Raw WPM</span><span class="value">{{ results.raw_wpm }}</span></div>
+      <div class="result-item"><span class="label">Accuracy</span><span class="value">{{ results.accuracy }}%</span></div>
+    </div>
+    <div class="start-row">
+      <form method="POST" action="{{ url_for('reset_test') }}">
+        <button type="submit" class="cta">Try Again</button>
+      </form>
+    </div>
+
+    {% elif started %}
+    <div class="stats">
+      <div><b id="timer-display">60</b><span>seconds left</span></div>
+      <div><b id="wpm-live">0</b><span>wpm</span></div>
+    </div>
+    <div class="passage-window">
+      <div class="passage" id="passage-text">{{ text }}</div>
+      <div class="passage-fade"></div>
+    </div>
+    <form method="POST" action="{{ url_for('submit_test') }}" id="test-form">
+      <textarea name="user_input" id="user-input" autofocus placeholder="Start typing here..."></textarea>
+      <p class="instruction">Test ends automatically at 0. Press Submit to end early.</p>
+      <div class="row">
+        <button type="submit" class="cta" id="submit-btn">Submit</button>
+        <form method="POST" action="{{ url_for('reset_test') }}" style="display:inline">
+          <button type="submit" class="btn-sec">Restart</button>
+        </form>
+      </div>
+    </form>
+    <script>
+      const DURATION=60;
+      const textarea=document.getElementById('user-input');
+      const timerEl=document.getElementById('timer-display');
+      const wpmEl=document.getElementById('wpm-live');
+      const form=document.getElementById('test-form');
+      let startTime=null, interval=null, finished=false;
+
+      function startTimer(){
+        startTime=Date.now();
+        interval=setInterval(()=>{
+          const elapsed=(Date.now()-startTime)/1000;
+          const left=Math.max(0,DURATION-elapsed);
+          timerEl.textContent=Math.ceil(left);
+          // live wpm = words typed so far (at 60s rate)
+          const words=textarea.value.trim().split(/\s+/).filter(Boolean).length;
+          wpmEl.textContent=elapsed>0?Math.round(words/(elapsed/60)):0;
+          if(left<=0) finish();
+        },200);
+      }
+
+      function finish(){
+        if(finished) return;
+        finished=true;
+        clearInterval(interval);
+        textarea.setAttribute('readonly',true);
+        timerEl.textContent='0';
+        form.submit();
+      }
+
+      // wrap passage words in spans for position tracking
+      const passageEl = document.getElementById('passage-text');
+      if (passageEl) {
+        const words = passageEl.textContent.trim().split(/\s+/);
+        passageEl.innerHTML = words.map((w,i) => '<span id="pw'+i+'">'+w+'</span>').join(' ');
+      }
+
+      function scrollPassage() {
+        if (!passageEl) return;
+        const typed  = textarea.value;
+        const spaces = (typed.match(/ /g) || []).length;
+        const idx    = Math.min(spaces, passageEl.querySelectorAll('span').length - 1);
+        const span   = document.getElementById('pw' + idx);
+        if (!span) return;
+        const winEl    = passageEl.parentElement;
+        const relTop   = span.getBoundingClientRect().top - winEl.getBoundingClientRect().top;
+        const lineH    = span.offsetHeight || 28;
+        if (relTop > lineH * 1.2) {
+          const cur  = parseFloat(passageEl.dataset.scroll || 0);
+          const next = cur + (relTop - lineH * 0.8);
+          passageEl.dataset.scroll = next;
+          passageEl.style.transform = 'translateY(-' + next + 'px)';
+        }
+      }
+
+      textarea.addEventListener('input',()=>{
+        if(!startTime && !finished) startTimer();
+        // reset scroll if textarea was cleared
+        if (textarea.value === '' && passageEl) {
+          passageEl.dataset.scroll = 0;
+          passageEl.style.transform = 'translateY(0)';
+        }
+        scrollPassage();
+      });
+
+      document.getElementById('submit-btn').addEventListener('click',(e)=>{
+        if(finished) return;
+        e.preventDefault();
+        finish();
+      });
+    </script>
+
+    {% else %}
+    <div class="passage">{{ text }}</div>
+    <div class="start-row">
+      <form method="POST" action="{{ url_for('start_test_post') }}">
+        <button type="submit" class="cta">Click to Start</button>
+      </form>
+    </div>
+    {% endif %}
+
+  </main>
+</body>
+</html>

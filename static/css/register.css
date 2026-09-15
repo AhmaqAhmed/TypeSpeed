@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+:root, [data-theme="light"] {
+  --bg: #f0f0f0; --card-bg: #2c2f33; --input-bg: #3a3d42;
+  --fg: #e9e4d8; --fg-dim: #9b968a;
+  --accent: #5b5fc7; --btn-bg: #4a4d52; --btn-h: #5a5d63;
+  --link: #4a90ff; --border: #2a2e36;
+}
+[data-theme="dark"] {
+  --bg: #0e1013; --card-bg: #1d2026; --input-bg: #25282f;
+  --fg: #d4d7dd; --fg-dim: #6b7280;
+  --accent: #7c7fdb; --btn-bg: #2c2f33; --btn-h: #3a3d42;
+  --link: #7c7fdb; --border: #2a2e36;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100vh; display: grid; place-items: center;
+  background: var(--bg); color: var(--fg);
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  -webkit-font-smoothing: antialiased; transition: background .2s;
+}
+.center { width: 100%; max-width: 480px; padding: 1rem; }
+.card {
+  background: var(--card-bg); border-radius: 14px;
+  padding: 3rem 2.6rem; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; align-items: stretch;
+}
+.card h2 { text-align: center; font-size: 2.4rem; font-weight: 800; margin-bottom: 2rem; }
+.field {
+  width: 100%; background: var(--input-bg); border: none; border-radius: 8px;
+  padding: 1rem 1.1rem; margin-bottom: 1rem; color: var(--fg);
+  font-family: inherit; font-size: 1rem; transition: background .2s;
+}
+.field::placeholder { color: var(--fg-dim); }
+.field:focus { outline: 2px solid var(--accent); }
+.submit {
+  display: block; width: 60%; margin: .6rem auto 0; padding: .9rem;
+  background: var(--btn-bg); border: none; border-radius: 10px;
+  color: var(--fg); font-family: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+}
+.submit:hover { background: var(--btn-h); }
+.swap { text-align: center; margin-top: 1.8rem; font-weight: 700; }
+.swap a { display: block; margin-top: .5rem; color: var(--link); text-decoration: underline; }
+.theme-btn {
+  position: fixed; top: 1rem; right: 1rem;
+  background: var(--btn-bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: .35rem .9rem; font-family: inherit; font-size: .8rem;
+  color: var(--fg-dim); cursor: pointer;
+}
+.theme-btn:hover { background: var(--btn-h); color: var(--fg); }

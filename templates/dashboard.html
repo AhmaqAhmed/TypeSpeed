@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeSpeed — Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+<style>
+  .theme-btn {
+    background: none;
+    border: 1px solid var(--border, #dde0e8);
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    font-family: inherit;
+    font-size: .8rem;
+    color: var(--fg-dim, #888);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .theme-btn:hover { background: var(--btn-sec, #e8e8ee); color: var(--fg, #1a1a1a); }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">TypeSpeed</a>
+    <button class="theme-btn">☾ Dark</button>
+    <div class="profile-wrap">
+      <div class="profile-icon">{{ session.username[0]|upper }}</div>
+      <div class="profile-dropdown">
+        <a style="color:#888;cursor:default;pointer-events:none">{{ session.username }}</a>
+        <hr class="divider">
+        <a href="{{ url_for('start_test_logged') }}">Take a Test</a>
+        <hr class="divider">
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard">
+
+    <div class="greeting">
+      <h1>Welcome back, <span class="accent">{{ session.username }}</span></h1>
+      <p>Here's how your typing has been improving.</p>
+    </div>
+
+    {% if not scores %}
+    <!-- ── empty state ── -->
+    <div class="section-card" style="text-align:center; padding:3rem 1.8rem;">
+      <p style="color:#888; margin-bottom:1.2rem;">No tests taken yet. Your stats will show up here once you complete one.</p>
+      <a href="{{ url_for('start_test_logged') }}" class="cta">Take Your First Test</a>
+    </div>
+
+    {% else %}
+
+    <!-- stat cards -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-label">Best WPM</span>
+        <span class="stat-value">{{ best_wpm }}</span>
+        <span class="stat-sub">all time</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Average WPM</span>
+        <span class="stat-value">{{ avg_wpm }}</span>
+        <span class="stat-sub">last {{ scores|length }} tests</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Accuracy</span>
+        <span class="stat-value">{{ avg_acc }}<small>%</small></span>
+        <span class="stat-sub">last {{ scores|length }} tests</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Tests Taken</span>
+        <span class="stat-value">{{ total_tests }}</span>
+        <span class="stat-sub">total</span>
+      </div>
+    </div>
+
+    <!-- line graph -->
+    <div class="section-card">
+      <h2 class="section-title">WPM Progress — Last {{ scores|length }} Tests</h2>
+      <div class="graph-wrap">
+        {% set min_wpm = (scores|map(attribute='final_wpm')|min) - 10 %}
+        {% set max_wpm = (scores|map(attribute='final_wpm')|max) + 10 %}
+        {% set range_wpm = max_wpm - min_wpm if max_wpm != min_wpm else 1 %}
+        {% set n = scores|length %}
+        {% set W = 860 %}
+        {% set H = 220 %}
+        {% set pad_l = 44 %}{% set pad_r = 24 %}{% set pad_t = 20 %}{% set pad_b = 32 %}
+        {% set gW = W - pad_l - pad_r %}
+        {% set gH = H - pad_t - pad_b %}
+
+        <svg viewBox="0 0 {{ W }} {{ H }}" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'JetBrains Mono',monospace;overflow:visible">
+          <!-- grid lines + y labels -->
+          {% for i in range(6) %}
+            {% set v = min_wpm + (range_wpm / 5) * i %}
+            {% set y = pad_t + (1 - (v - min_wpm) / range_wpm) * gH %}
+            <line x1="{{ pad_l }}" y1="{{ y }}" x2="{{ W - pad_r }}" y2="{{ y }}" stroke="#eee" stroke-width="1"/>
+            <text x="{{ pad_l - 6 }}" y="{{ y + 4 }}" text-anchor="end" font-size="11" fill="#aaa">{{ v|round|int }}</text>
+          {% endfor %}
+
+          <!-- x labels -->
+          {% for s in scores %}
+            {% set x = pad_l + (loop.index0 / (n - 1) if n > 1 else 0) * gW %}
+            <text x="{{ x }}" y="{{ H - 6 }}" text-anchor="middle" font-size="11" fill="#aaa">#{{ s.test_no }}</text>
+          {% endfor %}
+
+          <!-- filled area -->
+          {% set area_pts = [] %}
+          {% for s in scores %}
+            {% set x = pad_l + (loop.index0 / (n - 1) if n > 1 else 0) * gW %}
+            {% set y = pad_t + (1 - (s.final_wpm - min_wpm) / range_wpm) * gH %}
+            {% set _ = area_pts.append(x ~ ',' ~ y) %}
+          {% endfor %}
+          {% set last_x = pad_l + gW %}
+          {% set first_x = pad_l %}
+          <polygon points="{{ area_pts|join(' ') }} {{ last_x }},{{ pad_t + gH }} {{ first_x }},{{ pad_t + gH }}" fill="rgba(91,95,199,0.10)"/>
+
+          <!-- line -->
+          <polyline points="{{ area_pts|join(' ') }}" fill="none" stroke="#5b5fc7" stroke-width="2.5" stroke-linejoin="round"/>
+
+          <!-- dots -->
+          {% for s in scores %}
+            {% set x = pad_l + (loop.index0 / (n - 1) if n > 1 else 0) * gW %}
+            {% set y = pad_t + (1 - (s.final_wpm - min_wpm) / range_wpm) * gH %}
+            <circle cx="{{ x }}" cy="{{ y }}" r="5" fill="#fff" stroke="#5b5fc7" stroke-width="2.5"/>
+          {% endfor %}
+        </svg>
+      </div>
+    </div>
+
+    <!-- bar chart -->
+    <div class="section-card">
+      <h2 class="section-title">WPM — Bar View</h2>
+      <div class="chart">
+        <div class="chart-bars">
+          {% set max_bar = scores|map(attribute='final_wpm')|max %}
+          {% for s in scores %}
+          <div class="bar-wrap">
+            <div class="bar{% if loop.last %} highlight{% endif %}" style="height:{{ ((s.final_wpm / max_bar) * 100)|round|int }}%"></div>
+            <span class="bar-label">{{ s.final_wpm }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="chart-baseline"></div>
+      </div>
+    </div>
+
+    <!-- recent tests table -->
+    <div class="section-card">
+      <h2 class="section-title">Recent Tests</h2>
+      <table class="results-table">
+        <thead>
+          <tr><th>#</th><th>Final WPM</th><th>Raw WPM</th><th>Accuracy</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for s in scores|reverse %}
+          <tr>
+            <td>{{ s.test_no }}</td>
+            <td class="accent-val">{{ s.final_wpm }}</td>
+            <td>{{ s.raw_wpm }}</td>
+            <td>{{ s.accuracy|round|int }}%</td>
+            <td>{{ s.created_at.strftime('%b %d, %H:%M') if s.created_at else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% endif %}
+
+    <div class="cta-row">
+      <a href="{{ url_for('start_test_logged') }}" class="cta">Start a New Test</a>
+    </div>
+
+  </main>
+<script>
+  document.querySelectorAll(".profile-wrap").forEach(wrap => {
+    const icon = wrap.querySelector(".profile-icon");
+    const drop = wrap.querySelector(".profile-dropdown");
+    icon.addEventListener("click", e => {
+      e.stopPropagation();
+      drop.classList.toggle("open");
+    });
+    document.addEventListener("click", e => {
+      if (!wrap.contains(e.target)) drop.classList.remove("open");
+    });
+  });
+</script>
+</body>
+</html>

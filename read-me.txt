@@ -1,0 +1,46 @@
+#Stage one:
+    -> Login & Register - data is stored and compared with users table in postgres database.
+    -> Score details stored - score table is used to store the score - that data is used to display the dashboard.
+    -> Guest test.
+
+-------------------------------------------------------------------------------------------------------------------
+
+##Vulnerability testing :
+|--1. Nmap - used to find open ports and services.
+|--2. Nessus - finding web Vulnerabilities.
+|--3. Wireshark - Traffic analysis.
+|
+|___--> Report
+    --> Weekly Blogs
+
+-------------------------------------------------------------------------------------------------------------------
+
+##Features to add to the website:
+1. Score (points from 'each test + positive or negative progress + streak + daily reward + other features etc....')
+2. Leaderboard
+3. Daily login reward ( claiming )
+4. Streak ( after completion of test )
+5. JS addition
+6. Themes
+7. Private Chatting ( words restriction, media restriction, secure chat)
+8. Coustamizable Profile
+9. Linking socials
+10. Private rooms
+11. Modes (typing modes)
+12. Private games (games like mode in private rooms to compete online)
+
+##Security Features to add:
+1. Oauth
+2. JWT
+3. Parametrized Queries
+4. Hashed Passwords
+5. Rate Limiting
+6. Other SQLi Prevention Methods
+7. Logging
+8. MFA (2FA)
+9. CSRF
+10. RABC (Admin login)
+11. Monitoring
+12. HTTPS
+13. Account Recovery
+14. CAPTCHA code in registration

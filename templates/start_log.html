@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeSpeed — Test</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/start_log.css') }}">
+<style>
+  /* theme toggle button */
+  .theme-btn {
+    background: none;
+    border: 1px solid var(--border, #dde0e8);
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    font-family: inherit;
+    font-size: .8rem;
+    color: var(--fg-dim, #888);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .theme-btn:hover { background: var(--btn-sec, #e8e8ee); color: var(--fg, #1a1a1a); }
+
+  /* timer menu bar */
+  .timer-menu {
+    display: flex;
+    gap: .4rem;
+    margin-bottom: 1.2rem;
+  }
+  .timer-menu button {
+    background: none;
+    border: 1px solid #dde0e8;
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    font-family: inherit;
+    font-size: .82rem;
+    color: #888;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+    box-shadow: none;
+  }
+  .timer-menu button:hover {
+    background: #f0f0ff;
+    border-color: #5b5fc7;
+    color: #5b5fc7;
+    filter: none;
+    transform: none;
+  }
+  .timer-menu button.active {
+    background: #5b5fc7;
+    border-color: #5b5fc7;
+    color: #fff;
+    font-weight: 700;
+  }
+</style>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}">TypeSpeed</a>
+    <button class="theme-btn" aria-label="Toggle theme">☾ Dark</button>
+    <div class="profile-wrap">
+      <div class="profile-icon">{{ session.username[0]|upper }}</div>
+      <div class="profile-dropdown">
+        <a style="color:#888;cursor:default;pointer-events:none">{{ session.username }}</a>
+        <hr class="divider">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <hr class="divider">
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="test-wrap">
+
+    {% if results %}
+    <!-- ── Results ── -->
+    <div class="results">
+      <h3>Results</h3>
+      <div class="result-item"><span class="label">Final WPM</span><span class="value">{{ results.final_wpm }}</span></div>
+      <div class="result-item"><span class="label">Raw WPM</span><span class="value">{{ results.raw_wpm }}</span></div>
+      <div class="result-item"><span class="label">Accuracy</span><span class="value">{{ results.accuracy }}%</span></div>
+    </div>
+    <div class="start-row">
+      <form method="POST" action="{{ url_for('reset_test_logged') }}">
+        <button type="submit" class="cta">Try Again</button>
+      </form>
+    </div>
+
+    {% elif started %}
+    <!-- ── Active test ── -->
+    <div class="stats">
+      <div><b id="timer-display">{{ session.get('l_duration', 60) }}</b><span>seconds left</span></div>
+      <div><b id="wpm-live">0</b><span>wpm</span></div>
+    </div>
+    <div class="passage-window">
+      <div class="passage" id="passage-text">{{ text }}</div>
+      <div class="passage-fade"></div>
+    </div>
+    <form method="POST" action="{{ url_for('submit_test_logged') }}" id="test-form">
+      <textarea name="user_input" id="user-input" autofocus placeholder="Start typing here..."></textarea>
+      <p class="instruction">Test ends automatically at 0. Press Submit to end early.</p>
+      <div class="row">
+        <button type="submit" class="cta" id="submit-btn">Submit</button>
+        <form method="POST" action="{{ url_for('reset_test_logged') }}" style="display:inline">
+          <button type="submit" class="btn-sec">Restart</button>
+        </form>
+      </div>
+    </form>
+    <script>
+      const DURATION = {{ session.get('l_duration', 60) }};
+      const textarea = document.getElementById('user-input');
+      const timerEl  = document.getElementById('timer-display');
+      const wpmEl    = document.getElementById('wpm-live');
+      const form     = document.getElementById('test-form');
+      let startTime = null, interval = null, finished = false;
+
+      function startTimer() {
+        startTime = Date.now();
+        interval = setInterval(() => {
+          const elapsed = (Date.now() - startTime) / 1000;
+          const left    = Math.max(0, DURATION - elapsed);
+          timerEl.textContent = Math.ceil(left);
+          const words   = textarea.value.trim().split(/\s+/).filter(Boolean).length;
+          wpmEl.textContent = elapsed > 0 ? Math.round(words / (elapsed / 60)) : 0;
+          if (left <= 0) finish();
+        }, 200);
+      }
+
+      function finish() {
+        if (finished) return;
+        finished = true;
+        clearInterval(interval);
+        textarea.setAttribute('readonly', true);
+        timerEl.textContent = '0';
+        form.submit();
+      }
+
+      // passage scroll
+      const passageEl = document.getElementById('passage-text');
+      if (passageEl) {
+        const words = passageEl.textContent.trim().split(/\s+/);
+        passageEl.innerHTML = words.map((w, i) => '<span id="pw' + i + '">' + w + '</span>').join(' ');
+      }
+      function scrollPassage() {
+        if (!passageEl) return;
+        const typed  = textarea.value;
+        const spaces = (typed.match(/ /g) || []).length;
+        const idx    = Math.min(spaces, passageEl.querySelectorAll('span').length - 1);
+        const span   = document.getElementById('pw' + idx);
+        if (!span) return;
+        const winEl  = passageEl.parentElement;
+        const relTop = span.getBoundingClientRect().top - winEl.getBoundingClientRect().top;
+        const lineH  = span.offsetHeight || 28;
+        if (relTop > lineH * 1.2) {
+          const cur  = parseFloat(passageEl.dataset.scroll || 0);
+          const next = cur + (relTop - lineH * 0.8);
+          passageEl.dataset.scroll = next;
+          passageEl.style.transform = 'translateY(-' + next + 'px)';
+        }
+      }
+
+      textarea.addEventListener('input', () => {
+        if (!startTime && !finished) startTimer();
+        if (textarea.value === '' && passageEl) {
+          passageEl.dataset.scroll = 0;
+          passageEl.style.transform = 'translateY(0)';
+        }
+        scrollPassage();
+      });
+
+      document.getElementById('submit-btn').addEventListener('click', e => {
+        if (finished) return;
+        e.preventDefault();
+        finish();
+      });
+    </script>
+
+    {% else %}
+    <!-- ── Start screen ── -->
+
+    <!-- timer menu -->
+    <div class="timer-menu">
+      {% set dur = session.get('l_duration', 60) %}
+      {% for t in [15, 30, 60, 120, 180] %}
+      <form method="POST" action="{{ url_for('set_duration_logged') }}" style="display:inline">
+        <input type="hidden" name="duration" value="{{ t }}">
+        <button type="submit" class="{{ 'active' if dur == t else '' }}">{{ t }}s</button>
+      </form>
+      {% endfor %}
+    </div>
+
+    <div class="passage">{{ text }}</div>
+    <div class="start-row">
+      <form method="POST" action="{{ url_for('start_test_logged') }}">
+        <button type="submit" class="cta">Click to Start</button>
+      </form>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script>
+    document.querySelectorAll(".profile-wrap").forEach(wrap => {
+      const icon = wrap.querySelector(".profile-icon");
+      const drop = wrap.querySelector(".profile-dropdown");
+      icon.addEventListener("click", e => {
+        e.stopPropagation();
+        drop.classList.toggle("open");
+      });
+      document.addEventListener("click", e => {
+        if (!wrap.contains(e.target)) drop.classList.remove("open");
+      });
+    });
+  </script>
+</body>
+</html>

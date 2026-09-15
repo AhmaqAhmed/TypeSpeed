@@ -1,0 +1,89 @@
+/* home.css — base styles shared via home.html's <style> block */
+/* This file intentionally left minimal; all home-specific styles */
+/* live in home.html's inline <style> to keep the base64 image self-contained */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #000;
+  color: #e9e4d8;
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.6rem 2.2rem;
+}
+.brand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  color: inherit;
+}
+.login-pill {
+  display: inline-block;
+  padding: .55rem 1.4rem;
+  background: #4a4d52;
+  border-radius: 999px;
+  color: #e9e4d8;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: .95rem;
+}
+.login-pill:hover { background: #5a5d63; }
+
+.hero {
+  text-align: center;
+  padding: 9vh 1rem 0;
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+.hero p {
+  font-size: clamp(.85rem, 1.6vw, 1.05rem);
+  margin-top: 1rem;
+}
+.cta {
+  display: inline-block;
+  margin-top: 2.2rem;
+  padding: .85rem 2.4rem;
+  background: linear-gradient(180deg, #44474c, #2e3135);
+  border: none;
+  border-radius: 999px;
+  color: #e9e4d8;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  text-decoration: none;
+}
+.cta:hover { filter: brightness(1.12); }
+
+.features {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
+  padding: 0 2rem;
+  text-align: center;
+}
+.feature h3 { 
+  margin-bottom: .6rem;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold; 
+}
+.feature p  { 
+  color: var(--dim); font-size: 1.05rem; 
+  display: flex;
+  justify-content: space-between;
+}
