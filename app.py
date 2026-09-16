@@ -1,15 +1,17 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 import psycopg2 as p
 import random as r
+import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here-change-this'
+app.secret_key = os.getenv('SECRET_KEY')
 
 DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'typespeed_db',
-    'user': 'postgres',
-    'password': 'root'
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'database': os.getenv('DB_NAME', 'typespeed_db'),
+    'user': os.getenv('DB_USER', 'postgres'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 texts = [
