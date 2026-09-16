@@ -3,16 +3,30 @@ import psycopg2 as p
 import random as r
 import os
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 app = Flask(__name__)
+database_url = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'database': os.getenv('DB_NAME', 'typespeed_db'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD')
-}
+if database_url:
+    r = urlparse(database_url)
+    DB_CONFIG = {
+        'host':     r.hostname,
+        'database': r.path[1:],
+        'user':     r.username,
+        'password': r.password,
+        'port':     r.port or 5432,
+    }
+else:
+    DB_CONFIG = {
+        'host':     os.getenv('DB_HOST', 'localhost'),
+        'database': os.getenv('DB_NAME', 'typespeed_db'),
+        'user':     os.getenv('DB_USER', 'postgres'),
+        'password': os.getenv('DB_PASSWORD'),
+        'port':     5432,
+    }
+
 texts = [
     "The ability to type quickly and accurately is one of the most valuable skills in the modern world. Whether you are writing emails, coding software, or drafting reports, your typing speed directly affects your productivity. Most professionals spend several hours a day at a keyboard, and even a small improvement in typing speed can save a significant amount of time over the course of a year. The key is not just speed but the combination of speed and accuracy working together seamlessly.",
 
