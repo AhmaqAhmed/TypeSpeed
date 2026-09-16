@@ -13,7 +13,6 @@ DB_CONFIG = {
     'user': os.getenv('DB_USER', 'postgres'),
     'password': os.getenv('DB_PASSWORD')
 }
-
 texts = [
     "The ability to type quickly and accurately is one of the most valuable skills in the modern world. Whether you are writing emails, coding software, or drafting reports, your typing speed directly affects your productivity. Most professionals spend several hours a day at a keyboard, and even a small improvement in typing speed can save a significant amount of time over the course of a year. The key is not just speed but the combination of speed and accuracy working together seamlessly.",
 
