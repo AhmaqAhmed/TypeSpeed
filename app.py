@@ -209,6 +209,14 @@ def calculate_results(original, user_input, duration_seconds=60):
 
 # ==================== Auth ====================
 
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@app.route("/debug-db")
+def debug_db():
+    conn = get_db_connection()
+    if conn:
+        return "DB connected"
+    return "DB connection FAILED"
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @app.route("/")
 def home():
     # mark both test flows as "fresh" so next visit clears old results
